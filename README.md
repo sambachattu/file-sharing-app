@@ -350,19 +350,3 @@ Ensure the volume mount in `docker-compose.yml` is correct:
 volumes:
   - ./backend/uploads:/app/uploads
 ```
-
-## 📝 License
-
-This project is open source and available under the MIT License.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📧 Support
-
-For issues and questions, please open an issue on the repository.
-
----
-
-**Built with ❤️ using Go Fiber and React**
