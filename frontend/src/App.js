@@ -7,7 +7,7 @@ function App() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchFiles = async () => {
+  const fetchFiles = React.useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/files/');
@@ -20,17 +20,17 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchFiles();
-  }, []);
+  }, [fetchFiles]);
 
-  const handleUploadSuccess = () => {
+  const handleUploadSuccess = React.useCallback(() => {
     fetchFiles();
-  };
+  }, [fetchFiles]);
 
-  const handleDelete = async (filename) => {
+  const handleDelete = React.useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -47,7 +47,7 @@ function App() {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, [fetchFiles]);
 
   return (
     <div className="App">
@@ -60,8 +60,8 @@ function App() {
         <FileUpload onUploadSuccess={handleUploadSuccess} />
         
         <div className="files-section">
-          <h2>Uploaded Files ({files.length})</h2>
-          {loading ? (
+          <h2>Uploaded Files ({files.length}) {loading && files.length > 0 && <span className="loading-indicator">(Updating...)</span>}</h2>
+          {loading && files.length === 0 ? (
             <div className="loading">Loading files...</div>
           ) : (
             <FileList files={files} onDelete={handleDelete} />

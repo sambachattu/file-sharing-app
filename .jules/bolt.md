@@ -1,0 +1,3 @@
+## 2024-05-24 - Destructive Loading States Kill Memoization
+**Learning:** If a parent component conditionally unmounts a list component to show a full-screen or full-container loading state during background refetches, any `React.memo` optimizations on the list items are completely nullified. The entire DOM subtree is destroyed and recreated when the list component remounts.
+**Action:** When implementing loading states, carefully distinguish between the initial load (where it's acceptable to show a full loading state) and background updates (where the existing content should remain mounted and a non-destructive loading indicator should be shown).
