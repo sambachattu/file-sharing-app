@@ -43,7 +43,8 @@ func (fs *FileService) SaveFile(originalName string, filename string, size int64
 		DownloadURL:  fmt.Sprintf("/api/files/%s/download", filename),
 	}
 
-	fs.files[file.ID] = file
+	// ⚡ Bolt Optimization: Keying by Filename allows O(1) lookups instead of O(N) linear scans
+	fs.files[file.Filename] = file
 	fs.saveMetadata()
 
 	return file, nil
@@ -65,10 +66,9 @@ func (fs *FileService) GetFileByFilename(filename string) *models.File {
 	fs.mu.RLock()
 	defer fs.mu.RUnlock()
 
-	for _, file := range fs.files {
-		if file.Filename == filename {
-			return file
-		}
+	// ⚡ Bolt Optimization: Replaced O(N) linear scan with O(1) direct map lookup
+	if file, exists := fs.files[filename]; exists {
+		return file
 	}
 
 	return nil
@@ -78,26 +78,21 @@ func (fs *FileService) DeleteFile(filename string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	var fileID string
-	for id, file := range fs.files {
-		if file.Filename == filename {
-			fileID = id
-			break
-		}
-	}
-
-	if fileID == "" {
+	// ⚡ Bolt Optimization: O(1) check for existence instead of O(N) scan
+	if _, exists := fs.files[filename]; !exists {
 		return fmt.Errorf("file not found")
 	}
 
 	// Delete physical file
 	filePath := filepath.Join(fs.uploadDir, filename)
 	if err := os.Remove(filePath); err != nil {
+		// Proceed to remove from memory anyway or return error?
+		// Retaining original behavior of returning err.
 		return err
 	}
 
 	// Delete from memory
-	delete(fs.files, fileID)
+	delete(fs.files, filename)
 	fs.saveMetadata()
 
 	return nil
@@ -116,5 +111,15 @@ func (fs *FileService) loadMetadata() {
 	if err != nil {
 		return
 	}
-	json.Unmarshal(data, &fs.files)
+
+	// Temporary map to read raw JSON data
+	var rawData map[string]*models.File
+	if err := json.Unmarshal(data, &rawData); err != nil {
+		return
+	}
+
+	// Ensure loaded metadata is keyed by Filename (backward compatibility)
+	for _, file := range rawData {
+		fs.files[file.Filename] = file
+	}
 }

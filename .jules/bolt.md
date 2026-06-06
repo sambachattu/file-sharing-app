@@ -1,0 +1,3 @@
+## 2024-05-15 - [Backend Performance: O(1) Map Lookups over O(N) Scans]
+**Learning:** Found a performance bottleneck where file lookups and deletions were doing O(N) linear scans over an in-memory map instead of O(1) direct lookups. The in-memory map was keyed by UUID (`file.ID`), while API requests (from the frontend) referenced files by their `filename` parameter. This resulted in every `GetFile` and `DeleteFile` request iterating through the entire map.
+**Action:** Always key in-memory caches and maps using the same unique identifier that clients/API consumers will use to query the resource. In this case, keying by `filename` rather than internal UUID avoids O(N) linear searches.
