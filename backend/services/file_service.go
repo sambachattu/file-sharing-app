@@ -13,19 +13,27 @@ import (
 )
 
 type FileService struct {
-	uploadDir string
-	files     map[string]*models.File
-	mu        sync.RWMutex
-	metaFile  string
+	uploadDir     string
+	files         map[string]*models.File
+	filenameIndex map[string]*models.File // ⚡ Bolt: O(1) index for filename lookups
+	mu            sync.RWMutex
+	metaFile      string
 }
 
 func NewFileService(uploadDir string) *FileService {
 	fs := &FileService{
-		uploadDir: uploadDir,
-		files:     make(map[string]*models.File),
-		metaFile:  filepath.Join(uploadDir, "metadata.json"),
+		uploadDir:     uploadDir,
+		files:         make(map[string]*models.File),
+		filenameIndex: make(map[string]*models.File),
+		metaFile:      filepath.Join(uploadDir, "metadata.json"),
 	}
 	fs.loadMetadata()
+
+	// Build the index for existing files
+	for _, file := range fs.files {
+		fs.filenameIndex[file.Filename] = file
+	}
+
 	return fs
 }
 
@@ -44,6 +52,7 @@ func (fs *FileService) SaveFile(originalName string, filename string, size int64
 	}
 
 	fs.files[file.ID] = file
+	fs.filenameIndex[file.Filename] = file
 	fs.saveMetadata()
 
 	return file, nil
@@ -65,28 +74,17 @@ func (fs *FileService) GetFileByFilename(filename string) *models.File {
 	fs.mu.RLock()
 	defer fs.mu.RUnlock()
 
-	for _, file := range fs.files {
-		if file.Filename == filename {
-			return file
-		}
-	}
-
-	return nil
+	// ⚡ Bolt: Optimized from O(N) loop to O(1) hash map lookup
+	return fs.filenameIndex[filename]
 }
 
 func (fs *FileService) DeleteFile(filename string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	var fileID string
-	for id, file := range fs.files {
-		if file.Filename == filename {
-			fileID = id
-			break
-		}
-	}
-
-	if fileID == "" {
+	// ⚡ Bolt: Optimized from O(N) loop to O(1) hash map lookup
+	file, exists := fs.filenameIndex[filename]
+	if !exists {
 		return fmt.Errorf("file not found")
 	}
 
@@ -97,7 +95,8 @@ func (fs *FileService) DeleteFile(filename string) error {
 	}
 
 	// Delete from memory
-	delete(fs.files, fileID)
+	delete(fs.files, file.ID)
+	delete(fs.filenameIndex, filename)
 	fs.saveMetadata()
 
 	return nil

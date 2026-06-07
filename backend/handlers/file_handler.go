@@ -90,7 +90,7 @@ func (h *FileHandler) DownloadFile(c *fiber.Ctx) error {
 	}
 
 	filePath := filepath.Join(h.config.UploadDir, filename)
-	
+
 	// Check if file exists
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return c.Status(fiber.StatusNotFound).JSON(models.ErrorResponse{
@@ -98,13 +98,13 @@ func (h *FileHandler) DownloadFile(c *fiber.Ctx) error {
 			Message: "File not found on disk",
 		})
 	}
-	
+
 	// Set proper headers for download
 	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", file.OriginalName))
 	if file.MimeType != "" {
 		c.Set("Content-Type", file.MimeType)
 	}
-	
+
 	return c.SendFile(filePath)
 }
 
