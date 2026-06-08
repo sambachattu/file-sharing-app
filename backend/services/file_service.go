@@ -13,17 +13,19 @@ import (
 )
 
 type FileService struct {
-	uploadDir string
-	files     map[string]*models.File
-	mu        sync.RWMutex
-	metaFile  string
+	uploadDir     string
+	files         map[string]*models.File
+	filenameIndex map[string]string // ⚡ Bolt: O(1) filename lookup index
+	mu            sync.RWMutex
+	metaFile      string
 }
 
 func NewFileService(uploadDir string) *FileService {
 	fs := &FileService{
-		uploadDir: uploadDir,
-		files:     make(map[string]*models.File),
-		metaFile:  filepath.Join(uploadDir, "metadata.json"),
+		uploadDir:     uploadDir,
+		files:         make(map[string]*models.File),
+		filenameIndex: make(map[string]string),
+		metaFile:      filepath.Join(uploadDir, "metadata.json"),
 	}
 	fs.loadMetadata()
 	return fs
@@ -44,6 +46,7 @@ func (fs *FileService) SaveFile(originalName string, filename string, size int64
 	}
 
 	fs.files[file.ID] = file
+	fs.filenameIndex[filename] = file.ID // ⚡ Bolt: Update index
 	fs.saveMetadata()
 
 	return file, nil
@@ -65,10 +68,9 @@ func (fs *FileService) GetFileByFilename(filename string) *models.File {
 	fs.mu.RLock()
 	defer fs.mu.RUnlock()
 
-	for _, file := range fs.files {
-		if file.Filename == filename {
-			return file
-		}
+	// ⚡ Bolt: O(1) lookup instead of O(n) map iteration
+	if id, exists := fs.filenameIndex[filename]; exists {
+		return fs.files[id]
 	}
 
 	return nil
@@ -78,15 +80,9 @@ func (fs *FileService) DeleteFile(filename string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	var fileID string
-	for id, file := range fs.files {
-		if file.Filename == filename {
-			fileID = id
-			break
-		}
-	}
-
-	if fileID == "" {
+	// ⚡ Bolt: O(1) lookup instead of O(n) map iteration
+	fileID, exists := fs.filenameIndex[filename]
+	if !exists {
 		return fmt.Errorf("file not found")
 	}
 
@@ -98,6 +94,7 @@ func (fs *FileService) DeleteFile(filename string) error {
 
 	// Delete from memory
 	delete(fs.files, fileID)
+	delete(fs.filenameIndex, filename) // ⚡ Bolt: Remove from index
 	fs.saveMetadata()
 
 	return nil
@@ -116,5 +113,10 @@ func (fs *FileService) loadMetadata() {
 	if err != nil {
 		return
 	}
-	json.Unmarshal(data, &fs.files)
+	if err := json.Unmarshal(data, &fs.files); err == nil {
+		// ⚡ Bolt: Rebuild index on load
+		for id, file := range fs.files {
+			fs.filenameIndex[file.Filename] = id
+		}
+	}
 }
