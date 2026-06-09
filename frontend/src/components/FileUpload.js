@@ -38,7 +38,7 @@ function FileUpload({ onUploadSuccess }) {
 
       xhr.addEventListener('load', () => {
         if (xhr.status === 201) {
-          const response = JSON.parse(xhr.responseText);
+          JSON.parse(xhr.responseText);
           setMessage('✓ File uploaded successfully!');
           setSelectedFile(null);
           setUploadProgress(0);

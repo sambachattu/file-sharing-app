@@ -13,17 +13,19 @@ import (
 )
 
 type FileService struct {
-	uploadDir string
-	files     map[string]*models.File
-	mu        sync.RWMutex
-	metaFile  string
+	uploadDir   string
+	files       map[string]*models.File
+	filenameMap map[string]string // Maps filename to file ID for O(1) lookups
+	mu          sync.RWMutex
+	metaFile    string
 }
 
 func NewFileService(uploadDir string) *FileService {
 	fs := &FileService{
-		uploadDir: uploadDir,
-		files:     make(map[string]*models.File),
-		metaFile:  filepath.Join(uploadDir, "metadata.json"),
+		uploadDir:   uploadDir,
+		files:       make(map[string]*models.File),
+		filenameMap: make(map[string]string),
+		metaFile:    filepath.Join(uploadDir, "metadata.json"),
 	}
 	fs.loadMetadata()
 	return fs
@@ -44,6 +46,7 @@ func (fs *FileService) SaveFile(originalName string, filename string, size int64
 	}
 
 	fs.files[file.ID] = file
+	fs.filenameMap[file.Filename] = file.ID
 	fs.saveMetadata()
 
 	return file, nil
@@ -65,10 +68,8 @@ func (fs *FileService) GetFileByFilename(filename string) *models.File {
 	fs.mu.RLock()
 	defer fs.mu.RUnlock()
 
-	for _, file := range fs.files {
-		if file.Filename == filename {
-			return file
-		}
+	if fileID, ok := fs.filenameMap[filename]; ok {
+		return fs.files[fileID]
 	}
 
 	return nil
@@ -78,15 +79,8 @@ func (fs *FileService) DeleteFile(filename string) error {
 	fs.mu.Lock()
 	defer fs.mu.Unlock()
 
-	var fileID string
-	for id, file := range fs.files {
-		if file.Filename == filename {
-			fileID = id
-			break
-		}
-	}
-
-	if fileID == "" {
+	fileID, ok := fs.filenameMap[filename]
+	if !ok {
 		return fmt.Errorf("file not found")
 	}
 
@@ -98,6 +92,7 @@ func (fs *FileService) DeleteFile(filename string) error {
 
 	// Delete from memory
 	delete(fs.files, fileID)
+	delete(fs.filenameMap, filename)
 	fs.saveMetadata()
 
 	return nil
@@ -117,4 +112,9 @@ func (fs *FileService) loadMetadata() {
 		return
 	}
 	json.Unmarshal(data, &fs.files)
+
+	// Rebuild filenameMap
+	for id, file := range fs.files {
+		fs.filenameMap[file.Filename] = id
+	}
 }
