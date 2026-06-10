@@ -20,7 +20,7 @@ function FileList({ files, onDelete }) {
     if (mimeType && mimeType.startsWith('video/')) return '🎥';
     if (mimeType && mimeType.startsWith('audio/')) return '🎵';
     if (mimeType && mimeType.includes('pdf')) return '📄';
-    if (mimeType && mimeType.includes('zip') || mimeType && mimeType.includes('rar')) return '📦';
+    if ((mimeType && mimeType.includes('zip')) || (mimeType && mimeType.includes('rar'))) return '📦';
     if (filename && filename.endsWith('.txt')) return '📝';
     return '📁';
   };
