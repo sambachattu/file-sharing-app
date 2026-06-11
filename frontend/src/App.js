@@ -7,7 +7,9 @@ function App() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchFiles = async () => {
+  // ⚡ Bolt: Wrapped fetchFiles, handleUploadSuccess, and handleDelete in React.useCallback()
+  // to preserve referential equality and maximize the effectiveness of React.memo() on FileItem.
+  const fetchFiles = React.useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/files/');
@@ -20,17 +22,17 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchFiles();
-  }, []);
+  }, [fetchFiles]);
 
-  const handleUploadSuccess = () => {
+  const handleUploadSuccess = React.useCallback(() => {
     fetchFiles();
-  };
+  }, [fetchFiles]);
 
-  const handleDelete = async (filename) => {
+  const handleDelete = React.useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -47,7 +49,7 @@ function App() {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, [fetchFiles]);
 
   return (
     <div className="App">
