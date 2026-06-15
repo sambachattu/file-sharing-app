@@ -61,10 +61,13 @@ function App() {
         
         <div className="files-section">
           <h2>Uploaded Files ({files.length})</h2>
-          {loading ? (
+          {loading && files.length === 0 ? (
             <div className="loading">Loading files...</div>
           ) : (
-            <FileList files={files} onDelete={handleDelete} />
+            <>
+              {loading && <div className="loading-indicator">Updating...</div>}
+              <FileList files={files} onDelete={handleDelete} />
+            </>
           )}
         </div>
       </main>
