@@ -67,6 +67,15 @@ body {
   font-size: 1.1rem;
 }
 
+.loading-indicator {
+  text-align: center;
+  padding: 0.5rem;
+  color: #667eea;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+
 .App-footer {
   background: rgba(0, 0, 0, 0.3);
   color: white;
