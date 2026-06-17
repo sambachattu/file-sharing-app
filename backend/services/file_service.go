@@ -99,7 +99,10 @@ func (fs *FileService) DeleteFile(filename string) error {
 }
 
 func (fs *FileService) saveMetadata() {
-	data, err := json.MarshalIndent(fs.files, "", "  ")
+	// Optimization: json.Marshal is ~50% faster and uses less memory
+	// than json.MarshalIndent, avoiding string concatenation for spaces and newlines.
+	// This reduces the latency of file uploads and deletions as the map grows.
+	data, err := json.Marshal(fs.files)
 	if err != nil {
 		return
 	}
