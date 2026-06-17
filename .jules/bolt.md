@@ -9,3 +9,6 @@
 ## 2024-05-18 - Unnecessary React Component Unmounting Anti-Pattern
 **Learning:** Found a common performance bottleneck in `App.js` where a single `loading` state was used to replace the entire `FileList` component with a loading indicator. This approach completely unmounts the `FileList` (and all its children) on every background fetch (e.g., after upload or deletion), causing massive DOM destruction and recreation.
 **Action:** Always conditionally render loading states so that existing lists/components are preserved (e.g., `loading && files.length === 0` for full replacement, and a subtle overlay/indicator for background refetches). Additionally, extracted inner utility functions from `FileList.js` to avoid re-creation on every render.
+## 2024-05-18 - Backend json.MarshalIndent Anti-Pattern
+**Learning:** In Go, saving data with `json.MarshalIndent` involves significant overhead compared to `json.Marshal` due to formatting (adding spaces and newlines). As the data size grows (e.g., metadata file containing thousands of objects), this formatting noticeably slows down latency-sensitive operations like file upload or deletion.
+**Action:** Use `json.Marshal` for performance-critical save operations instead of `json.MarshalIndent`.
