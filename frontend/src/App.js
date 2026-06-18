@@ -26,8 +26,17 @@ function App() {
     fetchFiles();
   }, []);
 
-  const handleUploadSuccess = () => {
-    fetchFiles();
+  const handleUploadSuccess = (newFile) => {
+    // ⚡ Bolt Performance Optimization:
+    // Optimistically update the files list to avoid an expensive network request.
+    // This saves O(N) bandwidth, reduces backend CPU time, and prevents
+    // unnecessary unmounting/remounting of child components.
+    if (newFile) {
+      setFiles(prevFiles => [...prevFiles, newFile]);
+    } else {
+      // Fallback if no file is provided
+      fetchFiles();
+    }
   };
 
   const handleDelete = async (filename) => {
@@ -41,7 +50,10 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        fetchFiles();
+        // ⚡ Bolt Performance Optimization:
+        // Filter out the deleted file locally instead of fetching the entire list again.
+        // This saves O(N) bandwidth, reduces backend CPU time, and lowers DOM re-renders.
+        setFiles(prevFiles => prevFiles.filter(f => f.filename !== filename));
       }
     } catch (error) {
       console.error('Error deleting file:', error);
