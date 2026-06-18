@@ -9,3 +9,7 @@
 ## 2024-05-18 - Unnecessary React Component Unmounting Anti-Pattern
 **Learning:** Found a common performance bottleneck in `App.js` where a single `loading` state was used to replace the entire `FileList` component with a loading indicator. This approach completely unmounts the `FileList` (and all its children) on every background fetch (e.g., after upload or deletion), causing massive DOM destruction and recreation.
 **Action:** Always conditionally render loading states so that existing lists/components are preserved (e.g., `loading && files.length === 0` for full replacement, and a subtle overlay/indicator for background refetches). Additionally, extracted inner utility functions from `FileList.js` to avoid re-creation on every render.
+
+## 2024-06-18 - Optimistic UI Updates to Avoid Redundant Refetches
+**Learning:** React components sometimes use a full state refetch (e.g., `fetchFiles()`) to update the UI after a mutation like upload or delete. This forces an O(N) backend query, O(N) network transfer, and potentially unmounts/remounts components unnecessarily if the state goes into a "loading" state.
+**Action:** Always prefer optimistic UI updates. Update the local state arrays (e.g., appending a new file or filtering out a deleted file) using the response from the mutation to save network bandwidth and lower DOM re-renders.
