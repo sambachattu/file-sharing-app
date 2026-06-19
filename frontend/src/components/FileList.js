@@ -24,7 +24,11 @@ const getFileIcon = (mimeType, filename) => {
   return '📁';
 };
 
-function FileList({ files, onDelete }) {
+// ⚡ Bolt Performance Optimization:
+// Wrapped FileList in React.memo to prevent unnecessary re-renders when the parent App component
+// updates its state (e.g., toggling the 'loading' state during API calls).
+// This improves rendering performance, especially when the file list grows large.
+const FileList = React.memo(function FileList({ files, onDelete }) {
   const handleDownload = (downloadUrl, originalName) => {
     const link = document.createElement('a');
     link.href = downloadUrl;
@@ -79,6 +83,6 @@ function FileList({ files, onDelete }) {
       ))}
     </div>
   );
-}
+});
 
 export default FileList;

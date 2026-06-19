@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import './FileUpload.css';
 
-function FileUpload({ onUploadSuccess }) {
+// ⚡ Bolt Performance Optimization:
+// Wrapped FileUpload in React.memo to prevent unnecessary re-renders when the parent App component
+// updates its state (e.g., refreshing the file list or toggling 'loading').
+// This keeps the upload input and its internal state isolated from parent render cycles.
+const FileUpload = React.memo(function FileUpload({ onUploadSuccess }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -122,6 +126,6 @@ function FileUpload({ onUploadSuccess }) {
       </div>
     </div>
   );
-}
+});
 
 export default FileUpload;
