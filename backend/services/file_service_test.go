@@ -65,9 +65,26 @@ func TestSaveFile(t *testing.T) {
 
 	// Check metadata.json creation
 	metaFilePath := filepath.Join(tempDir, "metadata.json")
-	data, err := os.ReadFile(metaFilePath)
-	if err != nil {
-		t.Fatalf("Expected metadata.json to be readable, got error: %v", err)
+
+	// Wait for the asynchronous metadata save to complete
+	var data []byte
+	var readErr error
+	for i := 0; i < 10; i++ {
+		data, readErr = os.ReadFile(metaFilePath)
+		if readErr == nil {
+			// Check if file is completely written and parseable
+			var tempMetadata map[string]*models.File
+			if json.Unmarshal(data, &tempMetadata) == nil {
+				if _, ok := tempMetadata[file.ID]; ok {
+					break
+				}
+			}
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	if readErr != nil {
+		t.Fatalf("Expected metadata.json to be readable, got error: %v", readErr)
 	}
 
 	var metadata map[string]*models.File
