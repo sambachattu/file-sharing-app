@@ -9,3 +9,7 @@
 ## 2024-05-18 - Unnecessary React Component Unmounting Anti-Pattern
 **Learning:** Found a common performance bottleneck in `App.js` where a single `loading` state was used to replace the entire `FileList` component with a loading indicator. This approach completely unmounts the `FileList` (and all its children) on every background fetch (e.g., after upload or deletion), causing massive DOM destruction and recreation.
 **Action:** Always conditionally render loading states so that existing lists/components are preserved (e.g., `loading && files.length === 0` for full replacement, and a subtle overlay/indicator for background refetches). Additionally, extracted inner utility functions from `FileList.js` to avoid re-creation on every render.
+
+## 2024-06-20 - Backend Optimization: Removing Sync Disk I/O from Global Mutex
+**Learning:** Found a severe bottleneck in `file_service.go`. The synchronous saving of the in-memory file structure to `metadata.json` was being executed inside a global read-write mutex lock (`mu.Lock()`). This caused file uploads and deletions to serialize completely, waiting for slow disk I/O to finish before the lock was released, severely impacting concurrent request throughput.
+**Action:** Decoupled the state persistence from the request cycle. Added a `saveChan` and a dedicated background goroutine to perform the disk writing asynchronously, which allows the global mutex to be released almost instantly, scaling up concurrent file upload/deletion performance.
