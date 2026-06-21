@@ -63,6 +63,9 @@ func TestSaveFile(t *testing.T) {
 		t.Errorf("Expected stored file to match returned file")
 	}
 
+	// Wait for async saving to complete
+	time.Sleep(100 * time.Millisecond)
+
 	// Check metadata.json creation
 	metaFilePath := filepath.Join(tempDir, "metadata.json")
 	data, err := os.ReadFile(metaFilePath)

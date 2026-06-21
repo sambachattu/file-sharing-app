@@ -18,6 +18,7 @@ type FileService struct {
 	filenameMap map[string]string // Maps filename to file ID for O(1) lookups
 	mu          sync.RWMutex
 	metaFile    string
+	saveChan    chan struct{}
 }
 
 func NewFileService(uploadDir string) *FileService {
@@ -26,9 +27,24 @@ func NewFileService(uploadDir string) *FileService {
 		files:       make(map[string]*models.File),
 		filenameMap: make(map[string]string),
 		metaFile:    filepath.Join(uploadDir, "metadata.json"),
+		saveChan:    make(chan struct{}, 1),
 	}
 	fs.loadMetadata()
+	go fs.metadataSaver()
 	return fs
+}
+
+func (fs *FileService) triggerSave() {
+	select {
+	case fs.saveChan <- struct{}{}:
+	default:
+	}
+}
+
+func (fs *FileService) metadataSaver() {
+	for range fs.saveChan {
+		fs.saveMetadata()
+	}
 }
 
 func (fs *FileService) SaveFile(originalName string, filename string, size int64, mimeType string) (*models.File, error) {
@@ -47,7 +63,7 @@ func (fs *FileService) SaveFile(originalName string, filename string, size int64
 
 	fs.files[file.ID] = file
 	fs.filenameMap[file.Filename] = file.ID
-	fs.saveMetadata()
+	fs.triggerSave()
 
 	return file, nil
 }
@@ -93,13 +109,15 @@ func (fs *FileService) DeleteFile(filename string) error {
 	// Delete from memory
 	delete(fs.files, fileID)
 	delete(fs.filenameMap, filename)
-	fs.saveMetadata()
+	fs.triggerSave()
 
 	return nil
 }
 
 func (fs *FileService) saveMetadata() {
+	fs.mu.RLock()
 	data, err := json.MarshalIndent(fs.files, "", "  ")
+	fs.mu.RUnlock()
 	if err != nil {
 		return
 	}
