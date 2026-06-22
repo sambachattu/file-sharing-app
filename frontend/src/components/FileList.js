@@ -24,15 +24,53 @@ const getFileIcon = (mimeType, filename) => {
   return '📁';
 };
 
+// ⚡ Bolt: Memoize FileItem component to prevent unnecessary re-renders
+const FileItem = React.memo(({ file, onDownload, onDelete }) => {
+  return (
+    <div className="file-item">
+      <div className="file-icon">
+        {getFileIcon(file.mimeType, file.originalName)}
+      </div>
+
+      <div className="file-details">
+        <h4 className="file-name">{file.originalName}</h4>
+        <div className="file-meta">
+          <span>{formatFileSize(file.size)}</span>
+          <span>•</span>
+          <span>{formatDate(file.uploadedAt)}</span>
+        </div>
+      </div>
+
+      <div className="file-actions">
+        <button
+          onClick={() => onDownload(file.downloadUrl, file.originalName)}
+          className="action-button download"
+          title="Download"
+        >
+          ⬇️ Download
+        </button>
+        <button
+          onClick={() => onDelete(file.filename)}
+          className="action-button delete"
+          title="Delete"
+        >
+          🗑️ Delete
+        </button>
+      </div>
+    </div>
+  );
+});
+
 function FileList({ files, onDelete }) {
-  const handleDownload = (downloadUrl, originalName) => {
+  // ⚡ Bolt: Memoize download handler so it doesn't get recreated on every render
+  const handleDownload = React.useCallback((downloadUrl, originalName) => {
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = originalName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, []);
 
   if (files.length === 0) {
     return (
@@ -45,40 +83,16 @@ function FileList({ files, onDelete }) {
   return (
     <div className="file-list">
       {files.map((file) => (
-        <div key={file.id} className="file-item">
-          <div className="file-icon">
-            {getFileIcon(file.mimeType, file.originalName)}
-          </div>
-          
-          <div className="file-details">
-            <h4 className="file-name">{file.originalName}</h4>
-            <div className="file-meta">
-              <span>{formatFileSize(file.size)}</span>
-              <span>•</span>
-              <span>{formatDate(file.uploadedAt)}</span>
-            </div>
-          </div>
-
-          <div className="file-actions">
-            <button
-              onClick={() => handleDownload(file.downloadUrl, file.originalName)}
-              className="action-button download"
-              title="Download"
-            >
-              ⬇️ Download
-            </button>
-            <button
-              onClick={() => onDelete(file.filename)}
-              className="action-button delete"
-              title="Delete"
-            >
-              🗑️ Delete
-            </button>
-          </div>
-        </div>
+        <FileItem
+          key={file.id}
+          file={file}
+          onDownload={handleDownload}
+          onDelete={onDelete}
+        />
       ))}
     </div>
   );
 }
 
-export default FileList;
+// ⚡ Bolt: Memoize the entire FileList component as well
+export default React.memo(FileList);
