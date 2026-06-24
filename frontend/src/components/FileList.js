@@ -81,4 +81,5 @@ function FileList({ files, onDelete }) {
   );
 }
 
-export default FileList;
+// ⚡ Bolt: Use React.memo to prevent unnecessary re-renders when parent's other states (like loading) change
+export default React.memo(FileList);

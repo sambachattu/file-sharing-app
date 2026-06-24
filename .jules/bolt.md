@@ -1,3 +1,7 @@
+## 2026-06-24 - Unnecessary Child Re-renders from Parent State Anti-Pattern
+**Learning:** In React, a parent component's local state updates (like toggling a `loading` indicator during background refetches) cause all child components to re-render by default. In `App.js`, updating `loading` triggered re-renders of the entire `FileList` and `FileUpload` components, even when their props (the `files` array and callback functions) hadn't actually changed in value.
+**Action:** Use `React.useCallback` for functions passed down as props (like `onDelete` and `onUploadSuccess`) and wrap child components (`FileList`, `FileUpload`) in `React.memo()`. This ensures children only re-render when their actual data changes, saving CPU cycles on list rendering.
+
 ## 2024-05-18 - First Optimization Hunt
 **Learning:** Understanding the frontend React codebase to find optimization opportunities.
 **Action:** Identified `FileList.js` rendering a list of files that could benefit from virtualization or memoization, and `formatFileSize` / `getFileIcon` being re-computed on every render.
