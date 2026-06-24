@@ -124,4 +124,5 @@ function FileUpload({ onUploadSuccess }) {
   );
 }
 
-export default FileUpload;
+// ⚡ Bolt: Use React.memo to prevent unnecessary re-renders when parent's other states change
+export default React.memo(FileUpload);
