@@ -81,4 +81,6 @@ function FileList({ files, onDelete }) {
   );
 }
 
-export default FileList;
+// React.memo prevents unnecessary re-renders of the file list when the parent
+// App component's loading state changes, saving CPU cycles on calculating icons and sizes.
+export default React.memo(FileList);
