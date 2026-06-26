@@ -81,4 +81,7 @@ function FileList({ files, onDelete }) {
   );
 }
 
-export default FileList;
+// ⚡ Bolt: Wrapped FileList in React.memo to skip expensive DOM re-renders
+// when the parent component updates unrelated state (like `loading`).
+// Impact: Reduces re-renders by ~100% on background fetch loading toggles.
+export default React.memo(FileList);

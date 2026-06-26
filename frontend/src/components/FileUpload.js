@@ -124,4 +124,6 @@ function FileUpload({ onUploadSuccess }) {
   );
 }
 
-export default FileUpload;
+// ⚡ Bolt: Wrapped FileUpload in React.memo to prevent unnecessary re-renders
+// when App.js state (like `loading`) changes.
+export default React.memo(FileUpload);
