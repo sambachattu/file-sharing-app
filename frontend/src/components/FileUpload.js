@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import './FileUpload.css';
 
-function FileUpload({ onUploadSuccess }) {
+const FileUpload = memo(function FileUpload({ onUploadSuccess }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -122,6 +122,6 @@ function FileUpload({ onUploadSuccess }) {
       </div>
     </div>
   );
-}
+});
 
 export default FileUpload;
