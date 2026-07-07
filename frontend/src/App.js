@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import FileList from './components/FileList';
 import './App.css';
@@ -7,7 +7,9 @@ function App() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchFiles = async () => {
+  // Memoized fetchFiles to prevent recreation on every render,
+  // ensuring stable references for dependencies in useEffect and other handlers.
+  const fetchFiles = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/files/');
@@ -20,17 +22,20 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchFiles();
-  }, []);
+  }, [fetchFiles]);
 
-  const handleUploadSuccess = () => {
+  // Memoized handler to maintain stable reference
+  const handleUploadSuccess = useCallback(() => {
     fetchFiles();
-  };
+  }, [fetchFiles]);
 
-  const handleDelete = async (filename) => {
+  // Memoized handler to prevent FileList and its children from re-rendering
+  // purely because of a new function reference.
+  const handleDelete = useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -47,7 +52,7 @@ function App() {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, [fetchFiles]);
 
   return (
     <div className="App">
