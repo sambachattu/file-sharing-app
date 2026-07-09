@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import FileList from './components/FileList';
 import './App.css';
@@ -7,7 +7,9 @@ function App() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchFiles = async () => {
+  // ⚡ Bolt Optimization: Memoize the event handler using useCallback()
+  // Impact: Provides stable reference to the function
+  const fetchFiles = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/files/');
@@ -20,17 +22,21 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchFiles();
-  }, []);
+  }, [fetchFiles]);
 
-  const handleUploadSuccess = () => {
+  // ⚡ Bolt Optimization: Memoize the event handler using useCallback()
+  // Impact: Provides stable reference to the function
+  const handleUploadSuccess = useCallback(() => {
     fetchFiles();
-  };
+  }, [fetchFiles]);
 
-  const handleDelete = async (filename) => {
+  // ⚡ Bolt Optimization: Memoize the event handler using useCallback()
+  // Impact: Provides stable reference to the function, ensuring FileList's memoized children don't unnecessarily re-render
+  const handleDelete = useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -47,7 +53,7 @@ function App() {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, [fetchFiles]);
 
   return (
     <div className="App">
