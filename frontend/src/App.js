@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import FileList from './components/FileList';
 import './App.css';
@@ -7,7 +7,8 @@ function App() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchFiles = async () => {
+  // ⚡ Bolt: Memoized fetchFiles to provide a stable reference for downstream handlers
+  const fetchFiles = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/files/');
@@ -20,17 +21,18 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchFiles();
-  }, []);
+  }, [fetchFiles]);
 
-  const handleUploadSuccess = () => {
+  // ⚡ Bolt: Memoized upload and delete handlers to prevent re-renders in child components that rely on them
+  const handleUploadSuccess = useCallback(() => {
     fetchFiles();
-  };
+  }, [fetchFiles]);
 
-  const handleDelete = async (filename) => {
+  const handleDelete = useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -47,7 +49,7 @@ function App() {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, [fetchFiles]);
 
   return (
     <div className="App">
