@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import './FileList.css';
 
 const formatFileSize = (bytes) => {
@@ -24,15 +24,65 @@ const getFileIcon = (mimeType, filename) => {
   return '📁';
 };
 
+// ⚡ Bolt: Wrapped FileItem in React.memo to prevent unnecessary re-renders when parent state updates.
+// Destructured props ensure that shallow comparison effectively skips re-rendering for unmodified items.
+const FileItem = React.memo(({
+  id,
+  mimeType,
+  originalName,
+  size,
+  uploadedAt,
+  downloadUrl,
+  filename,
+  onDownload,
+  onDelete
+}) => {
+  return (
+    <div className="file-item">
+      <div className="file-icon">
+        {getFileIcon(mimeType, originalName)}
+      </div>
+
+      <div className="file-details">
+        <h4 className="file-name">{originalName}</h4>
+        <div className="file-meta">
+          <span>{formatFileSize(size)}</span>
+          <span>•</span>
+          <span>{formatDate(uploadedAt)}</span>
+        </div>
+      </div>
+
+      <div className="file-actions">
+        <button
+          onClick={() => onDownload(downloadUrl, originalName)}
+          className="action-button download"
+          title="Download"
+        >
+          ⬇️ Download
+        </button>
+        <button
+          onClick={() => onDelete(filename)}
+          className="action-button delete"
+          title="Delete"
+        >
+          🗑️ Delete
+        </button>
+      </div>
+    </div>
+  );
+});
+
 function FileList({ files, onDelete }) {
-  const handleDownload = (downloadUrl, originalName) => {
+  // ⚡ Bolt: Memoized handleDownload with useCallback to provide a stable reference
+  // to child components, preventing them from re-rendering due to inline function creation.
+  const handleDownload = useCallback((downloadUrl, originalName) => {
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = originalName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
+  }, []);
 
   if (files.length === 0) {
     return (
@@ -45,37 +95,18 @@ function FileList({ files, onDelete }) {
   return (
     <div className="file-list">
       {files.map((file) => (
-        <div key={file.id} className="file-item">
-          <div className="file-icon">
-            {getFileIcon(file.mimeType, file.originalName)}
-          </div>
-          
-          <div className="file-details">
-            <h4 className="file-name">{file.originalName}</h4>
-            <div className="file-meta">
-              <span>{formatFileSize(file.size)}</span>
-              <span>•</span>
-              <span>{formatDate(file.uploadedAt)}</span>
-            </div>
-          </div>
-
-          <div className="file-actions">
-            <button
-              onClick={() => handleDownload(file.downloadUrl, file.originalName)}
-              className="action-button download"
-              title="Download"
-            >
-              ⬇️ Download
-            </button>
-            <button
-              onClick={() => onDelete(file.filename)}
-              className="action-button delete"
-              title="Delete"
-            >
-              🗑️ Delete
-            </button>
-          </div>
-        </div>
+        <FileItem
+          key={file.id}
+          id={file.id}
+          mimeType={file.mimeType}
+          originalName={file.originalName}
+          size={file.size}
+          uploadedAt={file.uploadedAt}
+          downloadUrl={file.downloadUrl}
+          filename={file.filename}
+          onDownload={handleDownload}
+          onDelete={onDelete}
+        />
       ))}
     </div>
   );
