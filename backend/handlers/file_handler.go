@@ -7,10 +7,23 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
+
+var allowedExtensions = map[string]bool{
+	".txt":  true,
+	".pdf":  true,
+	".png":  true,
+	".jpg":  true,
+	".jpeg": true,
+	".gif":  true,
+	".csv":  true,
+	".doc":  true,
+	".docx": true,
+}
 
 type FileHandler struct {
 	service *services.FileService
@@ -41,8 +54,16 @@ func (h *FileHandler) UploadFile(c *fiber.Ctx) error {
 		})
 	}
 
+	// Check file extension
+	ext := strings.ToLower(filepath.Ext(file.Filename))
+	if !allowedExtensions[ext] {
+		return c.Status(fiber.StatusBadRequest).JSON(models.ErrorResponse{
+			Success: false,
+			Message: "File type not allowed",
+		})
+	}
+
 	// Generate unique filename
-	ext := filepath.Ext(file.Filename)
 	newFilename := fmt.Sprintf("%s%s", uuid.New().String(), ext)
 	filePath := filepath.Join(h.config.UploadDir, newFilename)
 
