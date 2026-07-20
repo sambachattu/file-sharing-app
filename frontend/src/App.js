@@ -26,8 +26,12 @@ function App() {
     fetchFiles();
   }, []);
 
-  const handleUploadSuccess = () => {
-    fetchFiles();
+  const handleUploadSuccess = (newFile) => {
+    if (newFile) {
+      setFiles(prev => [...prev, newFile]);
+    } else {
+      fetchFiles();
+    }
   };
 
   const handleDelete = async (filename) => {
