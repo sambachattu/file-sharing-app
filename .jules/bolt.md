@@ -9,3 +9,7 @@
 ## 2024-05-18 - Unnecessary React Component Unmounting Anti-Pattern
 **Learning:** Found a common performance bottleneck in `App.js` where a single `loading` state was used to replace the entire `FileList` component with a loading indicator. This approach completely unmounts the `FileList` (and all its children) on every background fetch (e.g., after upload or deletion), causing massive DOM destruction and recreation.
 **Action:** Always conditionally render loading states so that existing lists/components are preserved (e.g., `loading && files.length === 0` for full replacement, and a subtle overlay/indicator for background refetches). Additionally, extracted inner utility functions from `FileList.js` to avoid re-creation on every render.
+
+## 2024-05-18 - Minimize Network Requests and Optimize React Renders Anti-Pattern
+**Learning:** Found a performance bottleneck where components (`FileUpload`, `App`) were performing a full API fetch of the file list after every upload, which caused network delays and complete re-renders of the list. In addition, the list components did not utilize memoization, leading to O(N) re-renders for every change (e.g. upload or deletion).
+**Action:** Append the newly returned object directly to the local React state (instead of making another fetch request). Use `React.memo` with primitive props for list items (`FileItem`) and wrap state handlers in `useCallback` to prevent deep component tree updates.
