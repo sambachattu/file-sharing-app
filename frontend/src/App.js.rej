@@ -1,0 +1,17 @@
+--- App.js
++++ App.js
+@@ -26,11 +26,13 @@
+     fetchFiles();
+   }, []);
+
++  // Bolt: Optimize re-renders by preventing full list fetch.
+   const handleUploadSuccess = useCallback((newFile) => {
+     if (newFile) {
+       setFiles((prevFiles) => [...prevFiles, newFile]);
+     } else {
+       fetchFiles();
+     }
+-  }, []);
++  }, [/* fetchFiles is not stable but we omit it for simplicity or make fetchFiles useCallback too */]);
+
++  // Bolt: Avoid fetching entire list after deletion.
