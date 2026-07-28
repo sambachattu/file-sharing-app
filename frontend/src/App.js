@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import FileList from './components/FileList';
 import './App.css';
@@ -7,7 +7,7 @@ function App() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchFiles = async () => {
+  const fetchFiles = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch('/api/files/');
@@ -20,17 +20,25 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchFiles();
-  }, []);
+  }, [fetchFiles]);
 
-  const handleUploadSuccess = () => {
-    fetchFiles();
-  };
+  // ⚡ OPTIMIZATION: Wrapped in useCallback to prevent child component re-renders.
+  // ⚡ OPTIMIZATION: Updates local state instead of doing a full network refetch of the list.
+  const handleUploadSuccess = useCallback((newFile) => {
+    if (newFile) {
+      setFiles((prevFiles) => [...prevFiles, newFile]);
+    } else {
+      fetchFiles();
+    }
+  }, [fetchFiles]);
 
-  const handleDelete = async (filename) => {
+  // ⚡ OPTIMIZATION: Wrapped in useCallback to prevent child component re-renders.
+  // ⚡ OPTIMIZATION: Updates local state functionally instead of doing a full list refetch.
+  const handleDelete = useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -41,13 +49,13 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        fetchFiles();
+        setFiles((prevFiles) => prevFiles.filter(f => f.filename !== filename));
       }
     } catch (error) {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, []);
 
   return (
     <div className="App">
