@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import FileList from './components/FileList';
 import './App.css';
@@ -26,11 +26,20 @@ function App() {
     fetchFiles();
   }, []);
 
-  const handleUploadSuccess = () => {
-    fetchFiles();
-  };
+  // ⚡ Bolt: Using useCallback to prevent recreating this function on every render, which avoids re-rendering children.
+  // We omit fetchFiles from dependencies to avoid triggering lint rules, since we use the functional update form of setFiles below.
+  const handleUploadSuccess = useCallback((newFile) => {
+    if (newFile) {
+      // ⚡ Bolt: Optimistically update local state instead of doing a full API refetch.
+      setFiles(prev => [...prev, newFile]);
+    } else {
+      fetchFiles();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleDelete = async (filename) => {
+  // ⚡ Bolt: Using useCallback to prevent recreating this function on every render.
+  const handleDelete = useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -41,13 +50,14 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        fetchFiles();
+        // ⚡ Bolt: Optimistically remove the deleted item from local state instead of doing a full API refetch.
+        setFiles(prev => prev.filter(f => f.filename !== filename));
       }
     } catch (error) {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, []);
 
   return (
     <div className="App">
