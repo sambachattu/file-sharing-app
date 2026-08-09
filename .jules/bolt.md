@@ -9,3 +9,7 @@
 ## 2024-05-18 - Unnecessary React Component Unmounting Anti-Pattern
 **Learning:** Found a common performance bottleneck in `App.js` where a single `loading` state was used to replace the entire `FileList` component with a loading indicator. This approach completely unmounts the `FileList` (and all its children) on every background fetch (e.g., after upload or deletion), causing massive DOM destruction and recreation.
 **Action:** Always conditionally render loading states so that existing lists/components are preserved (e.g., `loading && files.length === 0` for full replacement, and a subtle overlay/indicator for background refetches). Additionally, extracted inner utility functions from `FileList.js` to avoid re-creation on every render.
+
+## 2026-08-09 - Prevent redundant API calls and React list re-renders
+**Learning:** React state updates can be used to prevent redundant API calls when modifying lists. Also, extracting list items to a separate component wrapped in `React.memo` and passing primitive props prevents full list re-renders when a single item changes.
+**Action:** When a file is uploaded or deleted, append/remove it from the local state array instead of fetching the entire list again. Wrap list items in `React.memo` using primitive props to prevent unnecessary re-renders. Use `useCallback` for event handlers passed down to child components.
