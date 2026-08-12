@@ -38,11 +38,11 @@ function FileUpload({ onUploadSuccess }) {
 
       xhr.addEventListener('load', () => {
         if (xhr.status === 201) {
-          JSON.parse(xhr.responseText);
+          const data = JSON.parse(xhr.responseText);
           setMessage('✓ File uploaded successfully!');
           setSelectedFile(null);
           setUploadProgress(0);
-          onUploadSuccess();
+          onUploadSuccess(data.File || data.file);
           
           // Reset file input
           document.getElementById('file-input').value = '';
