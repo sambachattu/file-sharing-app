@@ -26,11 +26,22 @@ function App() {
     fetchFiles();
   }, []);
 
-  const handleUploadSuccess = () => {
-    fetchFiles();
-  };
+  // ⚡ Bolt: Using useCallback to prevent unnecessary re-renders of child components
+  // and updating state directly instead of refetching all files
+  const handleUploadSuccess = React.useCallback((newFile) => {
+    if (!newFile) {
+      // Fallback in case the new file is not provided
+      fetchFiles();
+      return;
+    }
+    setFiles(prevFiles => {
+      // Handle non-deterministic backend sorting by prepending
+      return [newFile, ...prevFiles];
+    });
+  }, []);
 
-  const handleDelete = async (filename) => {
+  // ⚡ Bolt: Using useCallback and updating state directly instead of refetching
+  const handleDelete = React.useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -41,13 +52,13 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        fetchFiles();
+        setFiles(prevFiles => prevFiles.filter(file => file.filename !== filename));
       }
     } catch (error) {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, []);
 
   return (
     <div className="App">
