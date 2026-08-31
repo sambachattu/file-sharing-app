@@ -26,11 +26,15 @@ function App() {
     fetchFiles();
   }, []);
 
-  const handleUploadSuccess = () => {
-    fetchFiles();
-  };
+  const handleUploadSuccess = React.useCallback((newFile) => {
+    if (newFile) {
+      setFiles(prev => [...prev, newFile]);
+    } else {
+      fetchFiles(); // Fallback if file object is missing
+    }
+  }, []);
 
-  const handleDelete = async (filename) => {
+  const handleDelete = React.useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -41,13 +45,13 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        fetchFiles();
+        setFiles(prev => prev.filter(f => f.filename !== filename));
       }
     } catch (error) {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, []);
 
   return (
     <div className="App">
