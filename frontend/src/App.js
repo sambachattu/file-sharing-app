@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import FileList from './components/FileList';
 import './App.css';
@@ -26,11 +26,19 @@ function App() {
     fetchFiles();
   }, []);
 
-  const handleUploadSuccess = () => {
-    fetchFiles();
-  };
+  // Optimization: Use useCallback and local state updates (setFiles) to prevent
+  // full list re-renders and redundant API calls on upload success.
+  const handleUploadSuccess = useCallback((newFile) => {
+    if (newFile) {
+      setFiles((prevFiles) => [newFile, ...prevFiles]);
+    } else {
+      fetchFiles();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleDelete = async (filename) => {
+  // Optimization: Optimistically update local state instead of refetching the whole list.
+  const handleDelete = useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -41,13 +49,13 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        fetchFiles();
+        setFiles((prevFiles) => prevFiles.filter(f => f.filename !== filename));
       }
     } catch (error) {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, []);
 
   return (
     <div className="App">
