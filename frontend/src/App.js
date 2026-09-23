@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import FileList from './components/FileList';
 import './App.css';
@@ -26,11 +26,13 @@ function App() {
     fetchFiles();
   }, []);
 
-  const handleUploadSuccess = () => {
-    fetchFiles();
-  };
+  // Optimization: Update local state directly to avoid unnecessary API calls
+  const handleUploadSuccess = useCallback((newFile) => {
+    setFiles((prevFiles) => [...prevFiles, newFile]);
+  }, []);
 
-  const handleDelete = async (filename) => {
+  // Optimization: Update local state directly to avoid unnecessary API calls
+  const handleDelete = useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -41,13 +43,13 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        fetchFiles();
+        setFiles((prevFiles) => prevFiles.filter(file => file.filename !== filename));
       }
     } catch (error) {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, []);
 
   return (
     <div className="App">
