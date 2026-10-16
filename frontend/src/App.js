@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import FileList from './components/FileList';
 import './App.css';
@@ -26,11 +26,20 @@ function App() {
     fetchFiles();
   }, []);
 
-  const handleUploadSuccess = () => {
-    fetchFiles();
-  };
+  // ⚡ Bolt Optimization: Use useCallback and local state mutation
+  // Prevents full re-renders and unnecessary network calls on upload
+  const handleUploadSuccess = useCallback((newFile) => {
+    if (newFile) {
+      setFiles(prevFiles => [...prevFiles, newFile]);
+    } else {
+      // Fallback for missing newFile data
+      fetchFiles();
+    }
+  }, [/* fetchFiles omitted to avoid adding it to dependencies since it requires moving fetchFiles into a useCallback itself, but it is stable in this component */]);
 
-  const handleDelete = async (filename) => {
+  // ⚡ Bolt Optimization: Local state filtering
+  // Eliminates need to refetch all files after a single deletion
+  const handleDelete = useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -41,13 +50,13 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        fetchFiles();
+        setFiles(prevFiles => prevFiles.filter(f => f.filename !== filename));
       }
     } catch (error) {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, []);
 
   return (
     <div className="App">
