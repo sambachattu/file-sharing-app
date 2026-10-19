@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import FileUpload from './components/FileUpload';
 import FileList from './components/FileList';
 import './App.css';
@@ -26,11 +26,17 @@ function App() {
     fetchFiles();
   }, []);
 
-  const handleUploadSuccess = () => {
-    fetchFiles();
-  };
+  // ⚡ Bolt Optimization: Avoid full refetch and prevent unnecessary re-renders
+  const handleUploadSuccess = useCallback((newFile) => {
+    if (newFile) {
+      setFiles((prevFiles) => [newFile, ...prevFiles]);
+    } else {
+      fetchFiles();
+    }
+  }, []);
 
-  const handleDelete = async (filename) => {
+  // ⚡ Bolt Optimization: Avoid full refetch and prevent unnecessary re-renders
+  const handleDelete = useCallback(async (filename) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -41,13 +47,13 @@ function App() {
       });
       const data = await response.json();
       if (data.success) {
-        fetchFiles();
+        setFiles((prevFiles) => prevFiles.filter(f => f.filename !== filename));
       }
     } catch (error) {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
     }
-  };
+  }, []);
 
   return (
     <div className="App">
