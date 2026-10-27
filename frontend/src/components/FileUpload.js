@@ -38,11 +38,13 @@ function FileUpload({ onUploadSuccess }) {
 
       xhr.addEventListener('load', () => {
         if (xhr.status === 201) {
-          JSON.parse(xhr.responseText);
+          // ⚡ Bolt Optimization: Parse response to extract the uploaded file and pass it
+          // to onUploadSuccess to avoid a redundant API fetch.
+          const response = JSON.parse(xhr.responseText);
           setMessage('✓ File uploaded successfully!');
           setSelectedFile(null);
           setUploadProgress(0);
-          onUploadSuccess();
+          onUploadSuccess(response.file);
           
           // Reset file input
           document.getElementById('file-input').value = '';
