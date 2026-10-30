@@ -24,8 +24,9 @@ const getFileIcon = (mimeType, filename) => {
   return '📁';
 };
 
-function FileList({ files, onDelete }) {
-  const handleDownload = (downloadUrl, originalName) => {
+// ⚡ Bolt Optimization: Memoize FileItem with primitive props to prevent unnecessary re-renders
+const FileItem = React.memo(({ originalName, filename, size, mimeType, uploadedAt, downloadUrl, onDelete }) => {
+  const handleDownload = () => {
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = originalName;
@@ -33,6 +34,43 @@ function FileList({ files, onDelete }) {
     link.click();
     document.body.removeChild(link);
   };
+
+  return (
+    <div className="file-item">
+      <div className="file-icon">
+        {getFileIcon(mimeType, originalName)}
+      </div>
+
+      <div className="file-details">
+        <h4 className="file-name">{originalName}</h4>
+        <div className="file-meta">
+          <span>{formatFileSize(size)}</span>
+          <span>•</span>
+          <span>{formatDate(uploadedAt)}</span>
+        </div>
+      </div>
+
+      <div className="file-actions">
+        <button
+          onClick={handleDownload}
+          className="action-button download"
+          title="Download"
+        >
+          ⬇️ Download
+        </button>
+        <button
+          onClick={() => onDelete(filename)}
+          className="action-button delete"
+          title="Delete"
+        >
+          🗑️ Delete
+        </button>
+      </div>
+    </div>
+  );
+});
+
+function FileList({ files, onDelete }) {
 
   if (files.length === 0) {
     return (
@@ -45,37 +83,16 @@ function FileList({ files, onDelete }) {
   return (
     <div className="file-list">
       {files.map((file) => (
-        <div key={file.id} className="file-item">
-          <div className="file-icon">
-            {getFileIcon(file.mimeType, file.originalName)}
-          </div>
-          
-          <div className="file-details">
-            <h4 className="file-name">{file.originalName}</h4>
-            <div className="file-meta">
-              <span>{formatFileSize(file.size)}</span>
-              <span>•</span>
-              <span>{formatDate(file.uploadedAt)}</span>
-            </div>
-          </div>
-
-          <div className="file-actions">
-            <button
-              onClick={() => handleDownload(file.downloadUrl, file.originalName)}
-              className="action-button download"
-              title="Download"
-            >
-              ⬇️ Download
-            </button>
-            <button
-              onClick={() => onDelete(file.filename)}
-              className="action-button delete"
-              title="Delete"
-            >
-              🗑️ Delete
-            </button>
-          </div>
-        </div>
+        <FileItem
+          key={file.filename}
+          originalName={file.originalName}
+          filename={file.filename}
+          size={file.size}
+          mimeType={file.mimeType}
+          uploadedAt={file.uploadedAt}
+          downloadUrl={file.downloadUrl}
+          onDelete={onDelete}
+        />
       ))}
     </div>
   );
